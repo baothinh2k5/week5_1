@@ -1,44 +1,33 @@
 # ==========================================
-# STAGE 1: BUILD (Sử dụng Maven để tạo file .war)
+# GIAI ĐOẠN 1: BUILD
 # ==========================================
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# 1. Copy file pom.xml trước để tận dụng Docker Cache
-# Nếu bạn không sửa pom.xml, Docker sẽ bỏ qua bước tải thư viện ở lần build sau -> Rất nhanh
+# Copy pom.xml và tải thư viện (kèm cờ -B để tắt log spam)
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# 2. Tải toàn bộ dependencies (bao gồm EclipseLink, Postgres Driver)
-# Bước này đảm bảo mọi thư viện trong pom.xml đều được tải về máy ảo
-RUN mvn dependency:go-offline
-
-# 3. Copy source code và build
+# Copy source và build
 COPY src ./src
-# Build ra file WAR, bỏ qua test để tránh lỗi kết nối DB trong lúc build
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -B
 
 # ==========================================
-# STAGE 2: RUN (Chạy ứng dụng với Tomcat 10)
+# GIAI ĐOẠN 2: RUN
 # ==========================================
 FROM tomcat:10.1-jdk17
 
-# 1. Xóa ứng dụng mặc định của Tomcat để nhẹ và sạch
+# 1. Xóa ứng dụng mặc định
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-# 2. Copy file WAR từ giai đoạn Build
-# Đổi tên thành ROOT.war để app chạy ngay tại đường dẫn gốc (localhost:8080/)
-# Không cần gõ /ch3_exl_email nữa
+# 2. Copy file WAR từ giai đoạn build
 COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
-# 3. Thiết lập quyền hạn (Security Best Practice)
-# Chuyển quyền sở hữu thư mục webapps cho user 'tomcat' để tránh lỗi Permission Denied
-RUN chown -R tomcat:tomcat /usr/local/tomcat/webapps/
+# --- ĐÃ XÓA PHẦN TẠO USER ĐỂ TRÁNH LỖI ---
+# Mặc định Tomcat sẽ chạy với quyền root, đảm bảo không lỗi quyền hạn (Permission)
 
-# 4. Chạy với user 'tomcat' thay vì 'root' (An toàn hơn)
-USER tomcat
-
-# 5. Mở port 8080
+# 3. Mở port 8080
 EXPOSE 8080
 
-# 6. Khởi chạy Tomcat
+# 4. Chạy Tomcat
 CMD ["catalina.sh", "run"]
