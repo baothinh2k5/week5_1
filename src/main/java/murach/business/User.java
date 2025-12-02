@@ -1,52 +1,38 @@
 package murach.business;
 
 import java.io.Serializable;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table; 
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users") 
+@Table(name = "users")
 public class User implements Serializable {
-
-    private Long userId;
-    private String email;
-    private String firstName;
-    private String lastName;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Long getUserId() {
-        return userId;
-    }
+    @Column(name = "userid") 
+    private Long userId;
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "firstname")
+    private String firstName;
+
+    @Column(name = "lastname")
+    private String lastName;
+
+    public User() {}
+
+    // Getters and Setters
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
     
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
     
-    public String getFirstName() {
-        return firstName;
-    }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 }

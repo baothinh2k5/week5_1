@@ -24,5 +24,10 @@
         <label>&nbsp;</label>
         <input type="submit" value="Join Now" class="margin_left">
     </form>
+    
+    <form action="userAdmin" method="get">
+        <input type="hidden" name="action" value="display_users">
+        <input type="submit" value="Admin">
+    </form>
 </body>
 </html>

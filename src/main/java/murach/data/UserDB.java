@@ -1,36 +1,32 @@
 package murach.data;
 
-// QUAN TRỌNG: Đổi tất cả javax.* thành jakarta.*
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.TypedQuery;
-
+import java.util.List;
+import jakarta.persistence.*;
 import murach.business.User;
 
 public class UserDB {
 
     public static void insert(User user) {
-        EntityManager em = DBUtil.getEmFactory().createEntityManager();
-        EntityTransaction trans = em.getTransaction();
-        trans.begin();        
-        try {
-            em.persist(user);
-            trans.commit();
-        } catch (Exception e) {
-            System.out.println(e);
-            trans.rollback();
-        } finally {
-            em.close();
-        }
+        performQuery(user, "insert");
     }
 
     public static void update(User user) {
+        performQuery(user, "update");
+    }
+
+    public static void delete(User user) {
+        performQuery(user, "delete");
+    }
+
+    // Hàm chung để xử lý transaction cho gọn
+    private static void performQuery(User user, String action) {
         EntityManager em = DBUtil.getEmFactory().createEntityManager();
         EntityTransaction trans = em.getTransaction();
-        trans.begin();        
+        trans.begin();
         try {
-            em.merge(user);
+            if (action.equals("insert")) em.persist(user);
+            else if (action.equals("update")) em.merge(user);
+            else if (action.equals("delete")) em.remove(em.merge(user));
             trans.commit();
         } catch (Exception e) {
             System.out.println(e);
@@ -38,34 +34,15 @@ public class UserDB {
         } finally {
             em.close();
         }
-    }
-
-    public static void delete(User user) {
-        EntityManager em = DBUtil.getEmFactory().createEntityManager();
-        EntityTransaction trans = em.getTransaction();
-        trans.begin();        
-        try {
-            // Cần merge() trước khi remove() để đưa đối tượng vào trạng thái managed
-            // nếu nó là detached (như khi được lấy từ session trước đó).
-            em.remove(em.merge(user));
-            trans.commit();
-        } catch (Exception e) {
-            System.out.println(e);
-            trans.rollback();
-        } finally {
-            em.close();
-        }        
     }
 
     public static User selectUser(String email) {
         EntityManager em = DBUtil.getEmFactory().createEntityManager();
-        String qString = "SELECT u FROM User u " +
-                "WHERE u.email = :email";
+        String qString = "SELECT u FROM User u WHERE u.email = :email";
         TypedQuery<User> q = em.createQuery(qString, User.class);
         q.setParameter("email", email);
         try {
-            User user = q.getSingleResult();
-            return user;
+            return q.getSingleResult();
         } catch (NoResultException e) {
             return null;
         } finally {
@@ -74,7 +51,17 @@ public class UserDB {
     }
 
     public static boolean emailExists(String email) {
-        User u = selectUser(email);    
-        return u != null;
+        return selectUser(email) != null;
+    }
+
+    public static List<User> selectUsers() {
+        EntityManager em = DBUtil.getEmFactory().createEntityManager();
+        String qString = "SELECT u from User u";
+        TypedQuery<User> q = em.createQuery(qString, User.class);
+        try {
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
     }
 }
